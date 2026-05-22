@@ -1,0 +1,19 @@
+# Dark Channel Prior (DCP) dehazing parameters
+#
+# Reference:
+#   K. He, J. Sun, X. Tang, "Single Image Haze Removal Using Dark Channel Prior", CVPR 2009.
+#
+# Used by:
+#   python -m src.filters.batch_preprocess --filter dcp --config configs/dcp.yaml ...
+
+# You may keep this either nested under `dcp:` or as a flat mapping.
+dcp:
+    patch_size: 15
+    omega: 0.95
+    t0: 0.1
+    top_percent: 0.001
+
+    # Transmission refinement (guided filter)
+    refine: true
+    guided_radius: null
+    guided_eps: 0.001
