@@ -14,20 +14,7 @@ python -m pip install -r requirements.txt
 !pip install -r requirements.txt
 ```
 
-## Baseline Training (no filters)
 
-```bash
-python src/detection/train_yolo.py \
-  --data configs/dawn.yaml \
-  --model yolo26n.pt \
-  --epochs 100 \
-  --imgsz 640 \
-  --batch auto \
-  --device auto \
-  --project runs/dawn_baseline \
-  --name yolo26_original \
-  --seed 42
-```
 
 ## Baseline Evaluation
 

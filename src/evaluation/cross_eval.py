@@ -2,6 +2,7 @@ import os
 import glob
 import json
 import argparse
+import logging
 from pathlib import Path
 
 import cv2
@@ -12,6 +13,8 @@ try:
     from torchmetrics.detection.mean_ap import MeanAveragePrecision
 except ImportError:
     MeanAveragePrecision = None
+
+from torchvision.utils import draw_bounding_boxes
 
 # Import custom modules
 import sys
@@ -44,6 +47,8 @@ except:
     niqe_metric = None
     brisque_metric = None
 
+logger = logging.getLogger(__name__)
+
 def calc_lpips(img1_bgr, img2_bgr):
     if lpips_model is None: return 0.0
     img1_rgb = cv2.cvtColor(img1_bgr, cv2.COLOR_BGR2RGB)
@@ -64,7 +69,7 @@ def calc_no_ref(img_bgr):
     with torch.no_grad():
         return niqe_metric(t).item(), brisque_metric(t).item()
 
-def evaluate_reside(split_file, patch_size, omega, t0, out_dir=None):
+def evaluate_reside(split_file, reside_root, patch_size, omega, t0, out_dir=None):
     with open(split_file, 'r') as f:
         test_pairs = json.load(f).get('test', [])
         
@@ -72,12 +77,25 @@ def evaluate_reside(split_file, patch_size, omega, t0, out_dir=None):
         os.makedirs(os.path.join(out_dir, "reside_dehazed"), exist_ok=True)
     
     psnrs, ssims, lpipss = [], [], []
-    print(f"Evaluating RESIDE on {len(test_pairs)} test pairs...")
+    logger.info(f"Evaluating RESIDE on {len(test_pairs)} test pairs...")
     
     for pair in test_pairs:
-        hazy = cv2.imread(pair['hazy'])
-        clear = cv2.imread(pair['clear'])
-        if hazy is None or clear is None: continue
+        hazy_path = pair['hazy']
+        clear_path = pair['clear']
+        
+        # Resolve relative paths
+        if not os.path.isabs(hazy_path) and reside_root:
+            hazy_path = os.path.join(reside_root, hazy_path)
+        if not os.path.isabs(clear_path) and reside_root:
+            clear_path = os.path.join(reside_root, clear_path)
+            
+        hazy = cv2.imread(hazy_path)
+        clear = cv2.imread(clear_path)
+        
+        if hazy is None or clear is None: 
+            logger.warning(f"Could not load image pair: {hazy_path} / {clear_path}")
+            continue
+            
         if hazy.shape != clear.shape:
             hazy = cv2.resize(hazy, (clear.shape[1], clear.shape[0]))
             
@@ -88,13 +106,13 @@ def evaluate_reside(split_file, patch_size, omega, t0, out_dir=None):
             cv2.imwrite(os.path.join(out_dir, "reside_dehazed", img_name), dehazed)
             
         psnrs.append(psnr(clear, dehazed))
-        ssims.append(ssim(clear, dehazed, multichannel=True, channel_axis=2))
+        ssims.append(ssim(clear, dehazed, channel_axis=2))
         lpipss.append(calc_lpips(dehazed, clear))
         
     return {
-        "PSNR": np.mean(psnrs),
-        "SSIM": np.mean(ssims),
-        "LPIPS": np.mean(lpipss)
+        "PSNR": np.mean(psnrs) if psnrs else 0.0,
+        "SSIM": np.mean(ssims) if ssims else 0.0,
+        "LPIPS": np.mean(lpipss) if lpipss else 0.0
     }
 
 def read_yolo_labels(label_path, img_w, img_h):
@@ -116,23 +134,6 @@ def read_yolo_labels(label_path, img_w, img_h):
                     labels.append(cls_id)
     return np.array(boxes, dtype=np.float32), np.array(labels, dtype=np.int64)
 
-def draw_custom_boxes(img, gt_boxes, gt_labels, pred_boxes, pred_scores, pred_labels):
-    res = img.copy()
-    # Red for GT
-    for box, lbl in zip(gt_boxes, gt_labels):
-        x1, y1, x2, y2 = map(int, box)
-        name = "vehicle" if lbl == 0 else "person"
-        cv2.rectangle(res, (x1, y1), (x2, y2), (0, 0, 255), 2)
-        cv2.putText(res, f"GT:{name}", (x1, max(15, y1 - 5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-        
-    # Green for Predict
-    for box, score, lbl in zip(pred_boxes, pred_scores, pred_labels):
-        x1, y1, x2, y2 = map(int, box)
-        name = "vehicle" if lbl == 0 else "person"
-        cv2.rectangle(res, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(res, f"PR:{name} {score:.2f}", (x1, max(15, y2 - 5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-    return res
-
 def evaluate_dawn(dawn_dir, patch_size, omega, t0, out_dir=None):
     test_img_dir = os.path.join(dawn_dir, "images", "test")
     test_lbl_dir = os.path.join(dawn_dir, "labels", "test")
@@ -146,12 +147,12 @@ def evaluate_dawn(dawn_dir, patch_size, omega, t0, out_dir=None):
         image_paths.extend(glob.glob(os.path.join(fog_dir, "**", "*.jpg"), recursive=True))
         image_paths.extend(glob.glob(os.path.join(fog_dir, "**", "*.png"), recursive=True))
         
-    print(f"Evaluating DAWN (Fog only) on {len(image_paths)} test images...")
+    logger.info(f"Evaluating DAWN (Fog only) on {len(image_paths)} test images...")
     
     # Load YOLO
     load_res = try_load_ultralytics_model("yolo26n.pt", allow_fallback=True)
     if not load_res.ok:
-        print("Could not load YOLO model for evaluation.")
+        logger.error("Could not load YOLO model for evaluation.")
         return {}
     yolo_model = load_res.model
     
@@ -223,7 +224,24 @@ def evaluate_dawn(dawn_dir, patch_size, omega, t0, out_dir=None):
             if out_dir:
                 save_path = os.path.join(out_dir, "dawn_detected", rel_path)
                 os.makedirs(os.path.dirname(save_path), exist_ok=True)
-                annotated_img = draw_custom_boxes(dehazed, gt_boxes, gt_labels, pred_boxes, pred_scores, pred_labels)
+                
+                # Convert BGR to RGB for torchvision
+                img_rgb = cv2.cvtColor(dehazed, cv2.COLOR_BGR2RGB)
+                img_tensor = torch.from_numpy(img_rgb).permute(2, 0, 1).to(torch.uint8)
+                
+                # Draw Ground Truth Boxes
+                if len(gt_boxes) > 0:
+                    gt_str_labels = [f"GT:{'person' if l == 1 else 'vehicle'}" for l in gt_labels]
+                    img_tensor = draw_bounding_boxes(img_tensor, gt_boxes, labels=gt_str_labels, colors="red", width=2)
+                
+                # Draw Predicted Boxes
+                if len(pred_boxes) > 0:
+                    pr_str_labels = [f"PR:{'person' if l == 1 else 'vehicle'} {s:.2f}" for l, s in zip(pred_labels, pred_scores)]
+                    img_tensor = draw_bounding_boxes(img_tensor, pred_boxes, labels=pr_str_labels, colors="green", width=2)
+                
+                # Convert back to BGR and save
+                drawn_rgb = img_tensor.permute(1, 2, 0).numpy()
+                annotated_img = cv2.cvtColor(drawn_rgb, cv2.COLOR_RGB2BGR)
                 cv2.imwrite(save_path, annotated_img)
         else:
             if out_dir:
@@ -253,7 +271,8 @@ if __name__ == "__main__":
     parser.add_argument("--patch_size", type=int, default=15)
     parser.add_argument("--omega", type=float, default=0.95)
     parser.add_argument("--t0", type=float, default=0.1)
-    parser.add_argument("--sots_split", default="configs/sots_split.json")
+    parser.add_argument("--sots_split", default="configs/reside6k.json")
+    parser.add_argument("--reside_root", default=r"C:\Users\manh hung\.cache\kagglehub\datasets\kmljts\reside-6k\versions\1\RESIDE-6K")
     parser.add_argument("--dawn_dir", default="data/processed/dawn_yolo")
     parser.add_argument("--method", default="DCP", help="Tên phương pháp đang dùng (ex: DCP)")
     parser.add_argument("--save_output", action="store_true", help="Bật cờ này để lưu ảnh output")
@@ -262,12 +281,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     timestamp = time.strftime('%Y%m%d_%H%M%S')
+    
     if args.save_output:
         if not args.out_dir:
             run_name = f"{args.method}_p{args.patch_size}_o{args.omega}_t{args.t0}_{timestamp}"
             args.out_dir = os.path.join("results", run_name)
-        
         os.makedirs(args.out_dir, exist_ok=True)
+
+    # Setup Logging
+    log_handlers = [logging.StreamHandler(sys.stdout)]
+    if args.out_dir:
+        log_file = os.path.join(args.out_dir, "run.log")
+        log_handlers.append(logging.FileHandler(log_file, mode='w', encoding='utf-8'))
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=log_handlers
+    )
+
+    if args.save_output:
         # Lưu config
         with open(os.path.join(args.out_dir, "config.json"), 'w') as f:
             json.dump({
@@ -275,24 +308,24 @@ if __name__ == "__main__":
                 "patch_size": args.patch_size,
                 "omega": args.omega,
                 "t0": args.t0,
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "sots_split": args.sots_split,
+                "reside_root": args.reside_root
             }, f, indent=4)
-        print(f"Outputs will be saved to: {args.out_dir}")
-    else:
-        args.out_dir = None
+        logger.info(f"Outputs will be saved to: {args.out_dir}")
     
-    print("=== CROSS EVALUATION ===")
-    print(f"Config: patch={args.patch_size}, omega={args.omega}, t0={args.t0}")
+    logger.info("=== CROSS EVALUATION ===")
+    logger.info(f"Config: patch={args.patch_size}, omega={args.omega}, t0={args.t0}")
     
-    reside_metrics = evaluate_reside(args.sots_split, args.patch_size, args.omega, args.t0, args.out_dir)
-    print("\n[RESIDE SOTS Test]")
+    reside_metrics = evaluate_reside(args.sots_split, args.reside_root, args.patch_size, args.omega, args.t0, args.out_dir)
+    logger.info("\n[RESIDE SOTS Test]")
     for k, v in reside_metrics.items():
-        print(f"  {k}: {v:.4f}")
+        logger.info(f"  {k}: {v:.4f}")
         
     dawn_metrics = evaluate_dawn(args.dawn_dir, args.patch_size, args.omega, args.t0, args.out_dir)
-    print("\n[DAWN YOLO Test]")
+    logger.info("\n[DAWN YOLO Test]")
     for k, v in dawn_metrics.items():
-        print(f"  {k}: {v:.4f}")
+        logger.info(f"  {k}: {v:.4f}")
         
     if args.out_dir:
         # Lưu metrics log
@@ -324,4 +357,4 @@ if __name__ == "__main__":
                     f"{psnr_val:.4f},{ssim_val:.4f},{lpips_val:.4f},"
                     f"{niqe_val:.4f},{brisque_val:.4f},"
                     f"{map_all:.4f},{map_50:.4f},{recall:.4f},{args.out_dir}\n")
-        print(f"\n=> Đã ghi log tổng hợp vào: {csv_file}")
+        logger.info(f"\n=> Đã ghi log tổng hợp vào: {csv_file}")

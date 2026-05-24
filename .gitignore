@@ -48,6 +48,7 @@ pip-delete-this-directory.txt
 
 # Dataset and large files
 dataset/
+data/
 runs/
 results/
 *.pt

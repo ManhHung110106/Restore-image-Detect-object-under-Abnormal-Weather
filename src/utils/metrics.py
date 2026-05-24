@@ -11,16 +11,12 @@ def box_iou_xyxy(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     if a.size == 0 or b.size == 0:
         return np.zeros((a.shape[0], b.shape[0]), dtype=np.float32)
 
-    lt = np.maximum(a[:, None, :2], b[None, :, :2])
-    rb = np.minimum(a[:, None, 2:], b[None, :, 2:])
-    wh = np.clip(rb - lt, a_min=0.0, a_max=None)
-    inter = wh[..., 0] * wh[..., 1]
+    import torch
+    from torchvision.ops import box_iou
 
-    area_a = np.clip(a[:, 2] - a[:, 0], 0.0, None) * np.clip(a[:, 3] - a[:, 1], 0.0, None)
-    area_b = np.clip(b[:, 2] - b[:, 0], 0.0, None) * np.clip(b[:, 3] - b[:, 1], 0.0, None)
-
-    union = area_a[:, None] + area_b[None, :] - inter
-    return inter / np.clip(union, 1e-9, None)
+    ta = torch.from_numpy(a).float()
+    tb = torch.from_numpy(b).float()
+    return box_iou(ta, tb).numpy()
 
 
 @dataclass

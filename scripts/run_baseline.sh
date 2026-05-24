@@ -11,21 +11,10 @@ set -euo pipefail
 
 DAWN_RAW_ROOT=${DAWN_RAW_ROOT:-"dataset/DAWN"}
 
-python src/detection/train_yolo.py \
-  --data configs/dawn.yaml \
-  --model yolo26n.pt \
-  --epochs 100 \
-  --imgsz 640 \
-  --batch auto \
-  --device auto \
-  --project runs/dawn_baseline \
-  --name yolo26_original \
-  --seed 42 \
-  --raw_root "$DAWN_RAW_ROOT"
-
+# Evaluate baseline model
 python src/detection/evaluate_yolo.py \
   --data configs/dawn.yaml \
-  --weights runs/dawn_baseline/yolo26_original/weights/best.pt \
+  --model yolo26n.pt \
   --imgsz 640 \
   --device auto \
   --out_dir results/baseline \

@@ -42,7 +42,7 @@ def read_yolo_labels(label_path, img_w, img_h):
                     labels.append(cls_id)
     return np.array(boxes, dtype=np.float32), np.array(labels, dtype=np.int64)
 
-def objective(trial, image_paths, label_dirs, yolo_model):
+def objective(trial, image_paths, label_dirs, yolo_model, max_images=100):
     """
     Optuna objective function to maximize YOLO mAP and Recall on DAWN training/val set.
     """
@@ -51,7 +51,6 @@ def objective(trial, image_paths, label_dirs, yolo_model):
     patch_size = trial.suggest_int("patch_size", 5, 25, step=2)
     
     # Sub-sample image_paths for speed
-    max_images = 100 
     random_indices = np.random.choice(len(image_paths), min(max_images, len(image_paths)), replace=False)
     
     preds = []
@@ -132,7 +131,7 @@ def objective(trial, image_paths, label_dirs, yolo_model):
     # We want to maximize all three
     return map_50_95, map_50, recall
 
-def run_optuna_tuning(dawn_dir, n_trials=50, out_db="sqlite:///optuna_yolo.db"):
+def run_optuna_tuning(dawn_dir, n_trials=50, out_db="sqlite:///optuna_yolo.db", max_images=100):
     # Load model
     load_res = try_load_ultralytics_model("yolo26n.pt", allow_fallback=True)
     if not load_res.ok:
@@ -161,7 +160,7 @@ def run_optuna_tuning(dawn_dir, n_trials=50, out_db="sqlite:///optuna_yolo.db"):
         directions=["maximize", "maximize", "maximize"]
     )
     
-    study.optimize(lambda trial: objective(trial, image_paths, label_dirs, yolo_model), n_trials=n_trials)
+    study.optimize(lambda trial: objective(trial, image_paths, label_dirs, yolo_model, max_images=max_images), n_trials=n_trials)
     
     print("Pareto front trials:")
     for t in study.best_trials:
@@ -172,6 +171,7 @@ if __name__ == "__main__":
     parser.add_argument("--dawn_dir", default="data/processed/dawn_yolo")
     parser.add_argument("--trials", type=int, default=30)
     parser.add_argument("--out_db", default="sqlite:///optuna_yolo.db", help="Optuna database URI")
+    parser.add_argument("--max_images", type=int, default=100, help="Max images per trial")
     args = parser.parse_args()
     
-    run_optuna_tuning(args.dawn_dir, n_trials=args.trials, out_db=args.out_db)
+    run_optuna_tuning(args.dawn_dir, n_trials=args.trials, out_db=args.out_db, max_images=args.max_images)

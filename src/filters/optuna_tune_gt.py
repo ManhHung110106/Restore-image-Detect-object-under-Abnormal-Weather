@@ -53,7 +53,7 @@ def calc_lpips(img1_bgr, img2_bgr):
     return dist.item()
 
 
-def objective(trial, tune_pairs):
+def objective(trial, tune_pairs, reside_root, max_images=100):
     """
     Optuna objective function for multi-objective optimization (PSNR, SSIM, LPIPS).
     """
@@ -67,14 +67,21 @@ def objective(trial, tune_pairs):
     lpips_scores = []
     
     # Sample a subset of tune_pairs if it's too large, or run on all
-    # To save time during testing, we might limit max_images per trial
-    max_images = 100 
     random_indices = np.random.choice(len(tune_pairs), min(max_images, len(tune_pairs)), replace=False)
     
     for i in random_indices:
         pair = tune_pairs[i]
-        hazy_img = cv2.imread(pair['hazy'])
-        clear_img = cv2.imread(pair['clear'])
+        hazy_path = pair['hazy']
+        clear_path = pair['clear']
+        
+        # Resolve relative paths
+        if not os.path.isabs(hazy_path) and reside_root:
+            hazy_path = os.path.join(reside_root, hazy_path)
+        if not os.path.isabs(clear_path) and reside_root:
+            clear_path = os.path.join(reside_root, clear_path)
+            
+        hazy_img = cv2.imread(hazy_path)
+        clear_img = cv2.imread(clear_path)
         
         if hazy_img is None or clear_img is None:
             continue
@@ -89,7 +96,7 @@ def objective(trial, tune_pairs):
         
         # Calculate metrics
         p = psnr(clear_img, dehazed)
-        s = ssim(clear_img, dehazed, multichannel=True, channel_axis=2)
+        s = ssim(clear_img, dehazed, channel_axis=2)
         l = calc_lpips(dehazed, clear_img)
         
         psnr_scores.append(p)
@@ -103,7 +110,7 @@ def objective(trial, tune_pairs):
     # We want to MAXIMIZE psnr and ssim, and MINIMIZE lpips
     return avg_psnr, avg_ssim, avg_lpips
 
-def run_optuna_tuning(config_path, n_trials=50, out_db="sqlite:///optuna_gt.db"):
+def run_optuna_tuning(config_path, reside_root, n_trials=50, out_db="sqlite:///optuna_gt.db", max_images=100):
     # Load dataset pairs
     with open(config_path, 'r') as f:
         splits = json.load(f)
@@ -119,7 +126,7 @@ def run_optuna_tuning(config_path, n_trials=50, out_db="sqlite:///optuna_gt.db")
         directions=["maximize", "maximize", "minimize"]
     )
     
-    study.optimize(lambda trial: objective(trial, tune_pairs), n_trials=n_trials)
+    study.optimize(lambda trial: objective(trial, tune_pairs, reside_root, max_images=max_images), n_trials=n_trials)
     
     print("Number of finished trials: ", len(study.trials))
     print("Pareto front trials:")
@@ -128,9 +135,11 @@ def run_optuna_tuning(config_path, n_trials=50, out_db="sqlite:///optuna_gt.db")
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--split_file", default="configs/sots_split.json", help="Path to JSON split file")
+    parser.add_argument("--split_file", default="configs/reside6k.json", help="Path to JSON split file")
+    parser.add_argument("--reside_root", default=r"C:\Users\manh hung\.cache\kagglehub\datasets\kmljts\reside-6k\versions\1\RESIDE-6K", help="Root of RESIDE dataset")
     parser.add_argument("--trials", type=int, default=30, help="Number of trials")
     parser.add_argument("--out_db", default="sqlite:///optuna_gt.db", help="Optuna database URI")
+    parser.add_argument("--max_images", type=int, default=100, help="Max images per trial")
     args = parser.parse_args()
     
-    run_optuna_tuning(args.split_file, n_trials=args.trials, out_db=args.out_db)
+    run_optuna_tuning(args.split_file, args.reside_root, n_trials=args.trials, out_db=args.out_db, max_images=args.max_images)

@@ -27,8 +27,8 @@ Pipeline gồm 4 pha chính:
 ## 3. Quản Lý Dataset
 ### 3.1. RESIDE (SOTS)
 - **Lưu trữ gốc:** Tải trực tiếp qua thư viện `kagglehub`.
-- **Lấy ra & Xử lý:** Script `scripts/prepare_sots.py` tự động lấy đường dẫn ảnh từ cache của `kagglehub`, sau đó chia thành 80% Tuning (dùng thay Train/Val) và 20% Test.
-- **Lưu trữ config:** Kết quả phân tách được lưu tại `configs/sots_split.json` (chỉ chứa đường dẫn, không copy file vật lý để tiết kiệm ổ cứng).
+- **Lấy ra & Xử lý:** Script `src/data/reside_prepare.py` tự động lấy đường dẫn ảnh từ cache của `kagglehub`, sau đó chia thành 80% Tuning (dùng thay Train/Val) và 20% Test.
+- **Lưu trữ config:** Kết quả phân tách được lưu tại `configs/reside6k.json` (chỉ chứa đường dẫn tương đối, không copy file vật lý để tiết kiệm ổ cứng).
 
 ### 3.2. DAWN
 - **Xử lý:** Dataset DAWN đã được chia theo chuẩn YOLO (vào các thư mục `train`, `val`, `test` tại `data/processed/dawn_yolo`).
@@ -38,8 +38,8 @@ Pipeline gồm 4 pha chính:
 
 ## 4. Giải Thích Chi Tiết Từng File Code
 
-- **`scripts/prepare_sots.py`**: 
-  - *Chức năng*: Khám phá thư mục tải về của `kagglehub`, lấy danh sách ảnh hazy/clear tương ứng, trộn đều (shuffle với seed=42) và chia tỷ lệ 80:20. Sinh ra file cấu hình `configs/sots_split.json`.
+- **`src/data/reside_prepare.py`**: 
+  - *Chức năng*: Khám phá thư mục tải về của `kagglehub`, lấy danh sách ảnh hazy/clear tương ứng. Sinh ra file cấu hình `configs/reside6k.json` chứa đường dẫn tương đối.
 
 - **`src/filters/optuna_tune_gt.py`**:
   - *Chức năng*: Chạy Pha 1 (Ground Truth).

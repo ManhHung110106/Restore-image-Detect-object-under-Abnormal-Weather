@@ -52,7 +52,7 @@ def calc_no_ref_metrics(img_bgr):
         
     return niqe_score, brisque_score
 
-def objective(trial, image_paths):
+def objective(trial, image_paths, max_images=100):
     """
     Optuna objective function for multi-objective optimization (NIQE, BRISQUE).
     """
@@ -65,7 +65,6 @@ def objective(trial, image_paths):
     brisque_scores = []
     
     # Sample a subset of image_paths to save time during trials
-    max_images = 100 
     random_indices = np.random.choice(len(image_paths), min(max_images, len(image_paths)), replace=False)
     
     for i in random_indices:
@@ -89,7 +88,7 @@ def objective(trial, image_paths):
     # We want to MINIMIZE NIQE and MINIMIZE BRISQUE
     return avg_niqe, avg_brisque
 
-def run_optuna_tuning(dawn_dir, n_trials=50, out_db="sqlite:///optuna_nogt.db"):
+def run_optuna_tuning(dawn_dir, n_trials=50, out_db="sqlite:///optuna_nogt.db", max_images=100):
     """
     Tune on the training and validation splits of DAWN.
     dawn_dir expects something like 'data/processed/dawn_yolo'
@@ -115,7 +114,7 @@ def run_optuna_tuning(dawn_dir, n_trials=50, out_db="sqlite:///optuna_nogt.db"):
         directions=["minimize", "minimize"]
     )
     
-    study.optimize(lambda trial: objective(trial, image_paths), n_trials=n_trials)
+    study.optimize(lambda trial: objective(trial, image_paths, max_images=max_images), n_trials=n_trials)
     
     print("Number of finished trials: ", len(study.trials))
     print("Pareto front trials:")
@@ -127,6 +126,7 @@ if __name__ == "__main__":
     parser.add_argument("--dawn_dir", default="data/processed/dawn_yolo", help="Path to DAWN YOLO dataset")
     parser.add_argument("--trials", type=int, default=30, help="Number of trials")
     parser.add_argument("--out_db", default="sqlite:///optuna_nogt.db", help="Optuna database URI")
+    parser.add_argument("--max_images", type=int, default=100, help="Max images per trial")
     args = parser.parse_args()
     
-    run_optuna_tuning(args.dawn_dir, n_trials=args.trials, out_db=args.out_db)
+    run_optuna_tuning(args.dawn_dir, n_trials=args.trials, out_db=args.out_db, max_images=args.max_images)
