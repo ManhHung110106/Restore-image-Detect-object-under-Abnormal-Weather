@@ -8,3 +8,6 @@ pycocotools>=2.0.7
 matplotlib
 seaborn
 tqdm
+scikit-image
+lpips
+pyiqa

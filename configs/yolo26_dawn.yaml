@@ -1,0 +1,12 @@
+path: A:/HUST_on_GitHub/ProjectCV/dataset/DAWN/Fog
+train: splits/fog_train.txt
+val: splits/fog_val.txt
+test: splits/fog_test.txt
+
+names:
+  0: car
+  1: bus
+  2: truck
+  3: motorcycle
+  4: bicycle
+  5: person
