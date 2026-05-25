@@ -12,6 +12,8 @@ from src.datasets.dawn_dataset import DawnDataset
 from src.metrics.full_reference import compute_ssim, compute_psnr
 from src.metrics.no_reference import compute_brisque, compute_niqe, compute_piqe, compute_entropy
 from src.detection.yolo_runner import YOLOEvaluator
+from src.metrics.detection import compute_mean_iou
+from ultralytics import YOLO
 
 def load_config(path, is_optuna=False):
     if not os.path.exists(path):
@@ -102,6 +104,16 @@ def evaluate_on_dawn_yolo(dcp, dataset_path, results_dir):
         
     evaluator = YOLOEvaluator("A:/HUST_on_GitHub/ProjectCV/yolo26n.pt", temp_yaml_path)
     metrics = evaluator.evaluate(temp_yaml_path)
+    
+    # Calculate Mean IoU for True Positives
+    yolo_model = YOLO("A:/HUST_on_GitHub/ProjectCV/yolo26n.pt")
+    labels_dir = os.path.join(os.path.dirname(results_dir), "labels")
+    mean_iou = compute_mean_iou(yolo_model, results_dir, labels_dir)
+    
+    if metrics is None:
+        metrics = {}
+    metrics['mean_iou'] = mean_iou
+    
     return metrics
 
 def main():
@@ -152,12 +164,13 @@ def main():
             "DAWN_Entropy": entropy,
             "DAWN_mAP50": yolo_metrics.get("map50", 0) if yolo_metrics else 0,
             "DAWN_mAP50-95": yolo_metrics.get("map50_95", 0) if yolo_metrics else 0,
+            "DAWN_IoU": yolo_metrics.get("mean_iou", 0) if yolo_metrics else 0,
             "DAWN_Precision": yolo_metrics.get("precision", 0) if yolo_metrics else 0,
             "DAWN_Recall": yolo_metrics.get("recall", 0) if yolo_metrics else 0
         })
         
     df = pd.DataFrame(results)
-    df.to_csv("A:/HUST_on_GitHub/ProjectCV/results/all_metrics_evaluation.csv", index=False)
+    df.to_csv("A:/HUST_on_GitHub/ProjectCV/results/evaluation.csv", index=False)
     print("\n--- FINAL EVALUATION RESULTS ---")
     print(df.to_string())
 
