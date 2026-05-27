@@ -1,5 +1,5 @@
 import numpy as np
-from src.optimization.search_space import sample_dcp_config
+from src.optimization.dcp.search_space import sample_dcp_config
 from src.restoration.dcp import DCPDehazeFilter
 from src.metrics.full_reference import compute_ssim
 

@@ -10,15 +10,6 @@ def main():
     splits_dir = "A:/HUST_on_GitHub/ProjectCV/data/dawn/splits"
     os.makedirs(splits_dir, exist_ok=True)
     
-    # Also create labels directory properly for YOLO standard if needed, but YOLOv8 can read from nearby.
-    # YOLO requires images and labels in corresponding `images/` and `labels/` folders, or same folder.
-    # Let's create a symlink or copy them into data/dawn/images and data/dawn/labels
-    # Wait, the user has the images directly in Fog/, and labels in Fog_YOLO_darknet/.
-    # To make it compatible with YOLOv26/YOLOv8, it's best to create text files in data/dawn pointing to the images.
-    # YOLO dataset format with txt splits expects labels to be in a `labels` folder next to `images` folder OR same folder.
-    # We will just write the absolute paths to the images in the split files and ensure labels are in `labels` relative to `images` 
-    # OR we can just copy/symlink them into a standard structure. Let's create a standard structure.
-    
     std_images_dir = "A:/HUST_on_GitHub/ProjectCV/data/dawn/images"
     std_labels_dir = "A:/HUST_on_GitHub/ProjectCV/data/dawn/labels"
     os.makedirs(std_images_dir, exist_ok=True)

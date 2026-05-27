@@ -1,0 +1,6 @@
+study_name: "wmgf_derain_config3_map50"
+direction: "maximize"
+n_trials: 50
+seed: 42
+model:
+  name: "A:/HUST_on_GitHub/ProjectCV/yolo26n.pt"

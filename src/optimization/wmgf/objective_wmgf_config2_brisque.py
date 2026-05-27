@@ -1,19 +1,19 @@
 import numpy as np
-from src.optimization.search_space import sample_dcp_config
-from src.restoration.dcp import DCPDehazeFilter
+from src.optimization.wmgf.search_space import sample_wmgf_config
+from src.restoration.wmgf_derain import WMGFDerainFilter
 from src.metrics.no_reference import compute_brisque
 
-class ObjectiveDawnBrisque:
+class ObjectiveWMGFConfig2Brisque:
     def __init__(self, dataset):
         self.dataset = dataset
 
     def __call__(self, trial):
-        config = sample_dcp_config(trial)
-        dcp = DCPDehazeFilter(config)
+        config = sample_wmgf_config(trial)
+        filter_wmgf = WMGFDerainFilter(config)
 
         scores = []
         for sample in self.dataset:
-            restored = dcp.restore(sample["image"])
+            restored = filter_wmgf.restore(sample["image"])
             brisque = compute_brisque(restored)
             scores.append(brisque)
 

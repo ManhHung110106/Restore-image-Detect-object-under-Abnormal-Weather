@@ -1,0 +1,4 @@
+study_name: "wmgf_derain_config2_brisque"
+direction: "minimize"
+n_trials: 50
+seed: 42

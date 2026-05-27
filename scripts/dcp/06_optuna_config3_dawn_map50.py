@@ -3,13 +3,13 @@ import yaml
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.datasets.dawn_dataset import DawnDataset
 from src.detection.yolo_runner import YOLOEvaluator
-from src.optimization.objective_dawn_map50 import ObjectiveDawnMap50
+from src.optimization.dcp.objective_dawn_map50 import ObjectiveDawnMap50
 
 def main():
-    with open("A:/HUST_on_GitHub/ProjectCV/configs/optuna_config3_dawn_map50.yaml", "r") as f:
+    with open("A:/HUST_on_GitHub/ProjectCV/configs/dcp/optuna_config3_dawn_map50.yaml", "r") as f:
         cfg = yaml.safe_load(f)
         
     study_name = cfg["study_name"]

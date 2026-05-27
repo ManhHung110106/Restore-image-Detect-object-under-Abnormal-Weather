@@ -13,7 +13,7 @@ class YOLOEvaluator:
         self.data_yaml = data_yaml
         self.device = None if device == "auto" else device
 
-    def evaluate(self, image_dir_or_yaml: str) -> dict:
+    def evaluate(self, image_dir_or_yaml: str, classes=None) -> dict:
         """
         Evaluate model on a dataset.
         For Optuna trials, we might evaluate on a specific restored images directory.
@@ -28,14 +28,14 @@ class YOLOEvaluator:
         # We assume image_dir_or_yaml is either a .yaml file or a .txt split file.
         # If it's a split file containing absolute paths to the restored images, YOLO handles it correctly.
         
-        results = self.model.val(data=self.data_yaml, split='val', device=self.device, verbose=False)
+        results = self.model.val(data=self.data_yaml, split='val', device=self.device, verbose=False, classes=classes)
         metrics = extract_detection_metrics(results)
         return metrics
 
-    def predict_and_save(self, image_path: str, output_dir: str):
+    def predict_and_save(self, image_path: str, output_dir: str, classes=None):
         """Predict and save the image with bounding boxes to output_dir"""
         os.makedirs(output_dir, exist_ok=True)
         # model.predict returns list of Results
-        res = self.model.predict(source=image_path, device=self.device, save=True, project=output_dir, name="predict", exist_ok=True)
+        res = self.model.predict(source=image_path, device=self.device, save=True, project=output_dir, name="predict", exist_ok=True, classes=classes)
         # The saved image will be in output_dir/predict/filename.jpg
         return res

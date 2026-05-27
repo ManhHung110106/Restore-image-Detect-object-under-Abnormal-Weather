@@ -5,7 +5,7 @@ import hashlib
 import json
 from dataclasses import asdict
 
-from src.optimization.search_space import sample_dcp_config
+from src.optimization.dcp.search_space import sample_dcp_config
 from src.restoration.dcp import DCPDehazeFilter
 
 def hash_config(config):

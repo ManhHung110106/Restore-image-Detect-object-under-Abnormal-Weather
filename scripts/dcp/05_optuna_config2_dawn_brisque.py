@@ -3,12 +3,12 @@ import yaml
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.datasets.dawn_dataset import DawnDataset
-from src.optimization.objective_dawn_brisque import ObjectiveDawnBrisque
+from src.optimization.dcp.objective_dawn_brisque import ObjectiveDawnBrisque
 
 def main():
-    with open("A:/HUST_on_GitHub/ProjectCV/configs/optuna_config2_dawn_brisque.yaml", "r") as f:
+    with open("A:/HUST_on_GitHub/ProjectCV/configs/dcp/optuna_config2_dawn_brisque.yaml", "r") as f:
         cfg = yaml.safe_load(f)
         
     study_name = cfg["study_name"]

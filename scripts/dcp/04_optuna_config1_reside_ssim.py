@@ -3,12 +3,12 @@ import yaml
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.datasets.reside_dataset import ResideDataset
-from src.optimization.objective_reside_ssim import ObjectiveResideSSIM
+from src.optimization.dcp.objective_reside_ssim import ObjectiveResideSSIM
 
 def main():
-    with open("A:/HUST_on_GitHub/ProjectCV/configs/optuna_config1_reside_ssim.yaml", "r") as f:
+    with open("A:/HUST_on_GitHub/ProjectCV/configs/dcp/optuna_config1_reside_ssim.yaml", "r") as f:
         cfg = yaml.safe_load(f)
         
     study_name = cfg["study_name"]

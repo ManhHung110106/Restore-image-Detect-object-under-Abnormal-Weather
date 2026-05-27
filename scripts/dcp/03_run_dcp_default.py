@@ -3,13 +3,13 @@ import yaml
 import cv2
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.restoration.dcp import DCPConfig, DCPDehazeFilter
 from src.datasets.reside_dataset import ResideDataset
 from src.datasets.dawn_dataset import DawnDataset
 
 def main():
-    config_path = "A:/HUST_on_GitHub/ProjectCV/configs/dcp_default.yaml"
+    config_path = "A:/HUST_on_GitHub/ProjectCV/configs/dcp/dcp_default.yaml"
     with open(config_path, "r") as f:
         d_cfg = yaml.safe_load(f)
         

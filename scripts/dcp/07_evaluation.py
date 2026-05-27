@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.restoration.dcp import DCPConfig, DCPDehazeFilter
 from src.datasets.reside_dataset import ResideDataset
 from src.datasets.dawn_dataset import DawnDataset
@@ -118,7 +118,7 @@ def evaluate_on_dawn_yolo(dcp, dataset_path, results_dir):
 
 def main():
     configs = {
-        "Default": load_config("A:/HUST_on_GitHub/ProjectCV/configs/dcp_default.yaml"),
+        "Default": load_config("A:/HUST_on_GitHub/ProjectCV/configs/dcp/dcp_default.yaml"),
         "Optuna_SSIM": load_config("A:/HUST_on_GitHub/ProjectCV/results/optuna/config1_reside_ssim/best_config.yaml", True),
         "Optuna_BRISQUE": load_config("A:/HUST_on_GitHub/ProjectCV/results/optuna/config2_dawn_brisque/best_config.yaml", True),
         "Optuna_mAP50": load_config("A:/HUST_on_GitHub/ProjectCV/results/optuna/config3_dawn_map50/best_config.yaml", True)
