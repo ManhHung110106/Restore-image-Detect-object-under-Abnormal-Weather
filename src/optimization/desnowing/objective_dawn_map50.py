@@ -54,9 +54,9 @@ class ObjectiveDawnMap50:
             f_yaml.write(f"val: val.txt\n")
             # DAWN snow classes
             f_yaml.write("names:\n")
-            classes = ["bicycle", "bus", "car", "motorcycle", "person", "train", "truck"]
-            for i, cls in enumerate(classes):
-                f_yaml.write(f"  {i}: {cls}\n")
+            coco_names = {0: "person", 1: "bicycle", 2: "car", 3: "motorcycle", 4: "airplane", 5: "bus", 6: "train", 7: "truck"}
+            for k, v in coco_names.items():
+                f_yaml.write(f"  {k}: {v}\n")
                 
         # Evaluate using YOLO
         self.yolo_evaluator.data_yaml = yaml_path

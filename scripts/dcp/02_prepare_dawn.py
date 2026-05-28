@@ -35,8 +35,13 @@ def main():
             
         # Copy label if exists
         if os.path.exists(label_path):
-            if not os.path.exists(out_lbl_path):
-                shutil.copy2(label_path, out_lbl_path)
+            with open(label_path, "r") as f_in, open(out_lbl_path, "w") as f_out:
+                for line in f_in:
+                    parts = line.strip().split()
+                    if parts:
+                        class_id = int(parts[0])
+                        parts[0] = str(class_id - 1)
+                        f_out.write(" ".join(parts) + "\n")
             samples.append((out_img_path, out_lbl_path))
         else:
             # Create empty label if no objects

@@ -68,7 +68,7 @@ def calculate_iou(box1, box2):
     union = area1 + area2 - intersection
     return intersection / union if union > 0 else 0
 
-def compute_mean_iou(yolo_model, images_dir, labels_dir, allowed_classes=[0, 1, 2, 3, 5, 7]):
+def compute_mean_iou(yolo_model, images_dir, labels_dir, allowed_classes=[0, 1, 2, 3, 5, 6, 7]):
     import glob, os, cv2
     image_files = glob.glob(os.path.join(images_dir, '*.jpg')) + glob.glob(os.path.join(images_dir, '*.png'))
     ious = []

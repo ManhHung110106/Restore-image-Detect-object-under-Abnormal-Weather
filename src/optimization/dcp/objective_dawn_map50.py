@@ -52,12 +52,14 @@ class ObjectiveDawnMap50:
             f"train: A:/HUST_on_GitHub/ProjectCV/data/dawn/images",
             f"val: {restored_images_dir}", # YOLO can take a directory of images for val split
             f"names:",
-            f"  0: car",
-            f"  1: bus",
-            f"  2: truck",
+            f"  0: person",
+            f"  1: bicycle",
+            f"  2: car",
             f"  3: motorcycle",
-            f"  4: bicycle",
-            f"  5: person"
+            f"  4: airplane",
+            f"  5: bus",
+            f"  6: train",
+            f"  7: truck"
         ]
         with open(temp_yaml_path, "w") as f:
             f.write("\n".join(lines))

@@ -1,6 +1,7 @@
 from src.restoration.dcp import DCPDehazeFilter
 from src.restoration.wmgf_derain import WMGFDerainFilter
 from src.restoration.morph_guided_desnow import MorphGuidedDesnowFilter, MorphGuidedDesnowConfig
+from src.restoration.rbcp_desand import RBCPDesandFilter, RBCPDesandConfig
 import yaml
 
 def create_filter(filter_name, config_path=None):
@@ -18,5 +19,16 @@ def create_filter(filter_name, config_path=None):
                         if hasattr(config, k):
                             setattr(config, k, v)
         return MorphGuidedDesnowFilter(config)
+    elif filter_name.lower() in ["desand", "rbcp"]:
+        config = RBCPDesandConfig()
+        if config_path:
+            with open(config_path, "r") as f:
+                config_data = yaml.safe_load(f)
+                if config_data:
+                    for k, v in config_data.items():
+                        if hasattr(config, k):
+                            setattr(config, k, v)
+        return RBCPDesandFilter(config)
     else:
         raise ValueError(f"Unknown filter name: {filter_name}")
+
