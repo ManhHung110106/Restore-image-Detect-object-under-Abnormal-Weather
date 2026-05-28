@@ -4,8 +4,16 @@ import random
 import shutil
 import xml.etree.ElementTree as ET
 
-CLASSES = ["bicycle", "bus", "car", "motorcycle", "person", "train", "truck"]
-CLASS_TO_ID = {cls: idx for idx, cls in enumerate(CLASSES)}
+COCO_CLASS_TO_ID = {
+    "person": 0,
+    "bicycle": 1,
+    "car": 2,
+    "motorcycle": 3,
+    "bus": 5,
+    "train": 6,
+    "truck": 7
+}
+CLASS_TO_ID = COCO_CLASS_TO_ID
 
 def convert_to_yolo(size, box):
     dw = 1. / size[0]

@@ -9,8 +9,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 from src.datasets.snow100k_dataset import Snow100kDataset
 from src.datasets.dawn_dataset import DawnDataset
 from src.metrics.full_reference import compute_ssim, compute_psnr
-from src.metrics.no_reference import compute_brisque, compute_niqe
+from src.metrics.no_reference import compute_brisque, compute_niqe, compute_piqe, compute_entropy
 from src.detection.yolo_runner import YOLOEvaluator
+import pandas as pd
 from src.restoration.registry import create_filter
 
 def eval_full_reference(filter_obj, dataset):
@@ -26,13 +27,19 @@ def eval_full_reference(filter_obj, dataset):
 def eval_no_reference(filter_obj, dataset):
     brisques = []
     niqes = []
+    piqes = []
+    entropies = []
     for sample in dataset:
         restored = filter_obj.restore(sample["image"]) if filter_obj else sample["image"]
         b = compute_brisque(restored)
         n = compute_niqe(restored)
+        p = compute_piqe(restored)
+        e = compute_entropy(restored)
         if not np.isnan(b): brisques.append(b)
         if not np.isnan(n): niqes.append(n)
-    return np.mean(brisques), np.mean(niqes)
+        if not np.isnan(p): piqes.append(p)
+        if not np.isnan(e): entropies.append(e)
+    return np.mean(brisques), np.mean(niqes), np.mean(piqes), np.mean(entropies)
 
 def eval_detection(filter_obj, dataset, yolo_evaluator):
     import cv2
@@ -75,17 +82,28 @@ def eval_detection(filter_obj, dataset, yolo_evaluator):
         f_yaml.write(f"train: val.txt\n")
         f_yaml.write(f"val: val.txt\n")
         f_yaml.write("names:\n")
-        classes = ["bicycle", "bus", "car", "motorcycle", "person", "train", "truck"]
-        for i, cls in enumerate(classes):
-            f_yaml.write(f"  {i}: {cls}\n")
+        coco_names = {0: "person", 1: "bicycle", 2: "car", 3: "motorcycle", 4: "airplane", 5: "bus", 6: "train", 7: "truck"}
+        for k, v in coco_names.items():
+            f_yaml.write(f"  {k}: {v}\n")
             
     yolo_evaluator.data_yaml = yaml_path
     results = yolo_evaluator.evaluate(yaml_path)
     
+    from src.metrics.detection import compute_mean_iou
+    mean_iou = compute_mean_iou(yolo_evaluator.model, images_dir, labels_dir, allowed_classes=[0, 1, 2, 3, 5, 6, 7])
+    if results:
+        results["mean_iou"] = mean_iou
+    
     if not results:
-        return 0.0, 0.0
+        return 0.0, 0.0, 0.0, 0.0, 0.0
         
-    return results.get("map50", 0.0), results.get("map50_95", 0.0)
+    return (
+        results.get("map50", 0.0), 
+        results.get("map50_95", 0.0),
+        results.get("mean_iou", 0.0),
+        results.get("precision", 0.0),
+        results.get("recall", 0.0)
+    )
     
 def main():
     snow_test = Snow100kDataset("A:/HUST_on_GitHub/ProjectCV/data/snow100k/splits/test.txt", "A:/HUST_on_GitHub/ProjectCV/dataset/Snow100K")
@@ -100,7 +118,7 @@ def main():
         "config3": "A:/HUST_on_GitHub/ProjectCV/results/optuna/desnow_config3_map50/best_config.yaml"
     }
     
-    results = {}
+    results_list = []
     for name, path in configs.items():
         print(f"--- Evaluating {name} ---")
         if path is None:
@@ -112,23 +130,32 @@ def main():
             filter_obj = create_filter("desnow", path)
             
         ssim, psnr = eval_full_reference(filter_obj, snow_test)
-        brisque, niqe = eval_no_reference(filter_obj, dawn_test)
-        map50, map50_95 = eval_detection(filter_obj, dawn_test, yolo_eval)
+        brisque, niqe, piqe, entropy = eval_no_reference(filter_obj, dawn_test)
+        map50, map50_95, mean_iou, precision, recall = eval_detection(filter_obj, dawn_test, yolo_eval)
         
-        results[name] = {
-            "ssim": float(ssim),
-            "psnr": float(psnr),
-            "brisque": float(brisque),
-            "niqe": float(niqe),
-            "map50": float(map50),
-            "map50_95": float(map50_95)
-        }
+        results_list.append({
+            "Config": name,
+            "Snow100K_SSIM": float(ssim),
+            "Snow100K_PSNR": float(psnr),
+            "DAWN_BRISQUE": float(brisque),
+            "DAWN_NIQE": float(niqe),
+            "DAWN_PIQE": float(piqe),
+            "DAWN_Entropy": float(entropy),
+            "DAWN_mAP50": float(map50),
+            "DAWN_mAP50-95": float(map50_95),
+            "DAWN_IoU": float(mean_iou),
+            "DAWN_Precision": float(precision),
+            "DAWN_Recall": float(recall)
+        })
         
     os.makedirs("A:/HUST_on_GitHub/ProjectCV/results/desnow_evaluation", exist_ok=True)
-    with open("A:/HUST_on_GitHub/ProjectCV/results/desnow_evaluation/metrics.json", "w") as f:
-        json.dump(results, f, indent=4)
-        
-    print("Evaluation complete. Results saved to A:/HUST_on_GitHub/ProjectCV/results/desnow_evaluation/metrics.json")
+    df = pd.DataFrame(results_list)
+    csv_path = "A:/HUST_on_GitHub/ProjectCV/results/desnow_evaluation/metrics.csv"
+    df.to_csv(csv_path, index=False)
+    
+    print("\n--- FINAL EVALUATION RESULTS ---")
+    print(df.to_string())
+    print(f"Evaluation complete. Results saved to {csv_path}")
     
 if __name__ == "__main__":
     main()
