@@ -67,12 +67,7 @@ class WMGFDerainFilter(BaseRestorationFilter):
         mask = np.abs(gray - mean) > self.config.noise_threshold_scale * std
         return mask.astype(np.uint8)
 
-    def _adaptive_weighted_median(self, img_float, rain_mask):
-        # FAST APPROXIMATION:
-        # Instead of iterating over every single pixel in pure Python (which is extremely slow),
-        # we compute median blur for all 3 window sizes across the entire image using OpenCV's highly
-        # optimized C++ backend, then composite them based on the local noise ratio.
-        
+    def _adaptive_weighted_median(self, img_float, rain_mask):     
         img_uint8 = np.clip(img_float * 255.0, 0, 255).astype(np.uint8)
         
         # 1. Compute local noise density (ratio of rain pixels in medium window)

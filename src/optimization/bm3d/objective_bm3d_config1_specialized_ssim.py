@@ -26,18 +26,10 @@ def objective_config1_specialized_ssim(trial: optuna.Trial, noise_level, val_dat
     filt = BM3DDenoiseFilter(config)
 
     scores = []
-    # To save time in Optuna, we can use a subset of val_dataset if desired.
-    # The user said 20 trials should be fine. But our scratch BM3D is slow.
-    # Let's limit the number of validation images for Optuna tuning to 3 to keep it extremely fast.
     max_images = 3
     
     for i in range(min(len(val_dataset), max_images)):
         noisy, clean, image_id = val_dataset[i]
-        
-        # Optionally resize for even faster tuning
-        # noisy = cv2.resize(noisy, (256, 256))
-        # clean = cv2.resize(clean, (256, 256))
-        
         denoised = filt.restore(noisy)
         scores.append(compute_ssim(denoised, clean))
 

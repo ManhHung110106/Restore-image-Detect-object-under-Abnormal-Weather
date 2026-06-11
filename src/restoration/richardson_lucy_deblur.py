@@ -1,9 +1,10 @@
 import numpy as np
 from scipy.signal import convolve2d
 from .motion_kernel import make_motion_kernel
+from .base_filter import BaseRestorationFilter
 import cv2
 
-class RichardsonLucyMotionDeblurFilter:
+class RichardsonLucyMotionDeblurFilter(BaseRestorationFilter):
     def __init__(self, config):
         self.kernel_length = config.get('kernel_length', 15)
         self.kernel_angle = config.get('kernel_angle', 0.0)
@@ -11,7 +12,7 @@ class RichardsonLucyMotionDeblurFilter:
         self.clip_output = config.get('clip_output', True)
         self.denoise_after = config.get('denoise_after', False)
 
-    def apply(self, image: np.ndarray) -> np.ndarray:
+    def restore(self, image: np.ndarray) -> np.ndarray:
         is_uint8 = image.dtype == np.uint8
         img_f = image.astype(np.float32)
         if is_uint8:

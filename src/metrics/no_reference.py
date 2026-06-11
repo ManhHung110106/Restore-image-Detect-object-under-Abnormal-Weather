@@ -2,8 +2,6 @@ import numpy as np
 import pyiqa
 import torch
 import cv2
-
-# Cache pyiqa models globally
 _models = {}
 
 def _get_model(metric_name: str):
@@ -44,7 +42,7 @@ def compute_piqe(image: np.ndarray) -> float:
     return _compute_iqa(image, 'piqe')
 
 def compute_entropy(image: np.ndarray) -> float:
-    # Supporting metric only
+    # Supporting metric
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     hist = cv2.calcHist([gray], [0], None, [256], [0, 256])

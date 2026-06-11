@@ -26,7 +26,6 @@ class ObjectiveDawnMap50:
         restored_dir = os.path.join(self.base_results_dir, "restored", "optuna_config3", config_hash)
         restored_images_dir = os.path.join(restored_dir, "images")
         
-        # If not cached, restore and save
         if not os.path.exists(restored_images_dir):
             os.makedirs(restored_images_dir, exist_ok=True)
             dcp = DCPDehazeFilter(config)
@@ -43,14 +42,11 @@ class ObjectiveDawnMap50:
                     label_out_path = os.path.join(labels_dir, sample["label_rel"])
                     shutil.copy2(sample["label_path"], label_out_path)
                 
-        # To evaluate with YOLO, we need a custom yaml that points to this restored directory for validation
         temp_yaml_path = os.path.join(restored_dir, "temp_eval.yaml")
-        temp_yaml_path = os.path.join(restored_dir, "temp_eval.yaml")
-        # Always rewrite the yaml to ensure it's up-to-date
         lines = [
             f"path: A:/HUST_on_GitHub/ProjectCV/data/dawn",
             f"train: A:/HUST_on_GitHub/ProjectCV/data/dawn/images",
-            f"val: {restored_images_dir}", # YOLO can take a directory of images for val split
+            f"val: {restored_images_dir}",
             f"names:",
             f"  0: person",
             f"  1: bicycle",

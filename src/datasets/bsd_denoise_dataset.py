@@ -54,6 +54,6 @@ class BSDDenoiseDataset:
             noisy_bgr = noisy_bgr[:h, :w]
             
         if self.noise_level == "mixed":
-            return noisy_bgr, clean_bgr, sample["name"], sample["noise_level"]
+            return {"noisy": noisy_bgr, "clean": clean_bgr, "name": sample["name"], "noise_level": sample["noise_level"]}
         else:
-            return noisy_bgr, clean_bgr, sample["name"]
+            return {"noisy": noisy_bgr, "clean": clean_bgr, "name": sample["name"]}

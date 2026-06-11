@@ -1,6 +1,16 @@
-study_name: "wmgf_derain_config3_map50"
-direction: "maximize"
-n_trials: 50
-seed: 42
+alpha: 0.7722736686535485
+clahe_clip: 1.5380175315346856
+direction: maximize
+gamma: 1.1612464354053236
+guided_eps: 0.00037414062054039903
+guided_radius: 6
 model:
-  name: "A:/HUST_on_GitHub/ProjectCV/yolo26n.pt"
+  name: A:/HUST_on_GitHub/ProjectCV/yolo26n.pt
+n_trials: 50
+noise_threshold_scale: 0.9345524507390527
+range_sigma: 0.09559584227250653
+seed: 42
+spatial_sigma: 2.2865901881643804
+study_name: wmgf_derain_config3_map50
+window_large: 7
+window_medium: 7
