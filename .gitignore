@@ -1,8 +1,4 @@
-# Python
-.github/
-
-paper/
-
+# Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -34,6 +30,7 @@ pip-delete-this-directory.txt
 # Jupyter Notebook
 .ipynb_checkpoints/
 *.ipynb_checkpoints
+*.ipynb
 
 # IDEs
 .vscode/
@@ -42,54 +39,48 @@ pip-delete-this-directory.txt
 *.swo
 *~
 .DS_Store
+Thumbs.db
 
 # Environment variables
 .env
 .env.local
 .env.*.local
 
-# Dataset and large files
-dataset/
-data/
-runs/
-results/
+# Large weights and models
 *.pt
 *.pth
 *.weights
 *.h5
+*.onnx
+*.engine
+
+# Outputs & intermediate results
+outputs/
+output/
+results/
+runs/
+wandb/
+
+# Paper results (only kept locally, not pushed to GitHub)
+paper/
+
+# Keep configuration directory structure but ignore actual datasets/data
+data/*
+!data/README.md
+
+checkpoints/*
+!checkpoints/README.md
+
+dataset/*
+!dataset/README.md
 
 # Logs
 *.log
 logs/
 
-# OS
-Thumbs.db
-.DS_Store
-
 # Temporary files
 *.tmp
 *.temp
 temp/
-
-# VS Code
-.vscode/settings.json
-.vscode/extensions.json
-
-# PyCharm
-.idea/
-*.iml
-
-# Others
 .cache/
 .pytest_cache/
-.coverage
-htmlcov/
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# db
-*.db
-
-# docs
-docs/
